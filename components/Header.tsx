@@ -1,13 +1,26 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState, useEffect } from "react";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export function Header(): ReactElement {
   const { items } = useCart();
-  const totalItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect((): (() => void) => {
+    const timer = setTimeout((): void => {
+      setMounted(true);
+    }, 0);
+    return (): void => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const totalItemCount = mounted
+    ? items.reduce((sum, item) => sum + item.quantity, 0)
+    : 0;
 
   return (
     <header id="site-header" className="border-b border-sand bg-paper/95 sticky top-0 z-30 backdrop-blur-sm">

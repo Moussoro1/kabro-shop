@@ -16,8 +16,18 @@ import { OrderTicket } from "@/components/OrderTicket";
 export default function CheckoutPage(): ReactElement {
   const router = useRouter();
   const { items, total, clearCart } = useCart();
+  const [mounted, setMounted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect((): (() => void) => {
+    const timer = setTimeout((): void => {
+      setMounted(true);
+    }, 0);
+    return (): void => {
+      clearTimeout(timer);
+    };
+  }, []);
 
   const {
     register,
@@ -33,12 +43,12 @@ export default function CheckoutPage(): ReactElement {
     },
   });
 
-  // Redirection si le panier est vide
+  // Redirection si le panier est vide (uniquement après montage et lecture du stockage)
   useEffect(() => {
-    if (items.length === 0 && !isSubmitting) {
+    if (mounted && items.length === 0 && !isSubmitting) {
       router.replace("/products");
     }
-  }, [items, isSubmitting, router]);
+  }, [mounted, items.length, isSubmitting, router]);
 
   const previewOrder: Order = {
     id: "PREVIEW",
@@ -85,14 +95,14 @@ export default function CheckoutPage(): ReactElement {
     }
   };
 
-  if (items.length === 0) {
+  if (!mounted || items.length === 0) {
     return (
       <div id="checkout-loading" className="min-h-screen bg-paper text-charcoal flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="flex items-center gap-2 font-mono text-sm text-charcoal/70">
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
-            <span>Redirection vers la boutique...</span>
+            <span>{!mounted ? "Chargement de la commande..." : "Redirection vers la boutique..."}</span>
           </div>
         </main>
       </div>

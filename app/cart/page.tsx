@@ -1,15 +1,26 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { type ReactElement, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Truck, ShieldCheck } from "lucide-react";
+import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Truck, ShieldCheck, Loader2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useCart } from "@/context/CartContext";
 
 export default function CartPage(): ReactElement {
   const { items, updateQuantity, removeItem, total, clearCart } = useCart();
-  const hasItems = items.length > 0;
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect((): (() => void) => {
+    const timer = setTimeout((): void => {
+      setMounted(true);
+    }, 0);
+    return (): void => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const hasItems = mounted && items.length > 0;
 
   return (
     <div id="cart-page-container" className="min-h-screen bg-paper text-charcoal flex flex-col">
@@ -44,7 +55,14 @@ export default function CartPage(): ReactElement {
           )}
         </div>
 
-        {hasItems ? (
+        {!mounted ? (
+          <div id="cart-loading-state" className="flex items-center justify-center py-20 text-charcoal/60">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <span className="text-xs font-mono">Chargement du panier...</span>
+            </div>
+          </div>
+        ) : hasItems ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Liste façon Ticket de Marché */}
             <div className="lg:col-span-7 space-y-4">
