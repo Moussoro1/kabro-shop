@@ -50,21 +50,21 @@ export default function ProductsPage(): ReactElement {
   const { addItem } = useCart();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setQuery(params.get("q") ?? "");
-    setSelectedCategoryId(params.get("category") ?? "all");
-    const requestedSort = params.get("sort") as SortOption | null;
-    if (requestedSort && requestedSort in sortLabels) setSort(requestedSort);
-
-    const onPopState = (): void => {
+    const syncFromUrl = (): void => {
       const current = new URLSearchParams(window.location.search);
       setQuery(current.get("q") ?? "");
       setSelectedCategoryId(current.get("category") ?? "all");
       const currentSort = current.get("sort") as SortOption | null;
       setSort(currentSort && currentSort in sortLabels ? currentSort : "default");
     };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+
+    // Synchronisation différée pour éviter les rendus en cascade synchrones à l'hydratation
+    const timer = setTimeout(syncFromUrl, 0);
+    window.addEventListener("popstate", syncFromUrl);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("popstate", syncFromUrl);
+    };
   }, []);
 
   useEffect(() => {
@@ -73,6 +73,8 @@ export default function ProductsPage(): ReactElement {
         const [loadedProducts, loadedCategories] = await Promise.all([getProducts(), getCategories()]);
         setProducts(loadedProducts);
         setCategoriesList(loadedCategories);
+      } catch {
+        // Conserver les données initiales/fallback en cas d'erreur
       } finally {
         setLoading(false);
       }
@@ -81,6 +83,12 @@ export default function ProductsPage(): ReactElement {
   }, []);
 
   const categories = useMemo(() => [{ id: "all", name: "Tous les articles", slug: "tous" }, ...categoriesList], [categoriesList]);
+
+  const activeCategoryName = useMemo(() => {
+    if (selectedCategoryId === "all") return null;
+    const found = categoriesList.find((cat) => cat.id === selectedCategoryId);
+    return found ? found.name : selectedCategoryId;
+  }, [categoriesList, selectedCategoryId]);
 
   const updateUrl = (nextQuery: string, nextCategory: string, nextSort: SortOption): void => {
     const params = new URLSearchParams();
@@ -165,7 +173,51 @@ export default function ProductsPage(): ReactElement {
           </div>
         </div>
 
-        {hasActiveFilters && <div className="flex flex-wrap items-center gap-2 mb-5 text-xs"><span className="text-charcoal/60">Filtres actifs :</span>{query && <button type="button" onClick={() => handleQueryChange("")} className="min-h-9 rounded-full bg-sand/50 px-3 inline-flex items-center gap-1">Recherche : {query}<X className="w-3 h-3" /></button>}{selectedCategoryId !== "all" && <button type="button" onClick={() => handleCategoryChange("all")} className="min-h-9 rounded-full bg-sand/50 px-3 inline-flex items-center gap-1">Catégorie<X className="w-3 h-3" /></button>}<button type="button" onClick={clearFilters} className="min-h-9 px-2 font-semibold text-primary">Tout effacer</button></div>}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 mb-5 text-xs">
+            <span className="text-charcoal/60">Filtres actifs :</span>
+            {query && (
+              <button
+                type="button"
+                onClick={() => handleQueryChange("")}
+                className="min-h-9 rounded-full bg-sand/50 px-3 inline-flex items-center gap-1 hover:bg-sand/70 transition-colors"
+                aria-label="Effacer le filtre de recherche"
+              >
+                <span>Recherche : {query}</span>
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {activeCategoryName && (
+              <button
+                type="button"
+                onClick={() => handleCategoryChange("all")}
+                className="min-h-9 rounded-full bg-sand/50 px-3 inline-flex items-center gap-1 hover:bg-sand/70 transition-colors"
+                aria-label={`Supprimer le filtre de catégorie ${activeCategoryName}`}
+              >
+                <span>Catégorie : {activeCategoryName}</span>
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {sort !== "default" && (
+              <button
+                type="button"
+                onClick={() => handleSortChange("default")}
+                className="min-h-9 rounded-full bg-sand/50 px-3 inline-flex items-center gap-1 hover:bg-sand/70 transition-colors"
+                aria-label={`Réinitialiser le tri ${sortLabels[sort]}`}
+              >
+                <span>Tri : {sortLabels[sort]}</span>
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="min-h-9 px-2 font-semibold text-primary hover:underline transition-colors"
+            >
+              Tout effacer
+            </button>
+          </div>
+        )}
 
         {loading ? <CatalogSkeleton /> : filteredProducts.length > 0 ? <div id="products-grid" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">{filteredProducts.map((product) => <ProductCard key={product.id} product={product} isAdded={addedProductId === product.id} onAddToCart={handleAddToCart} />)}</div> : <div id="products-empty-state" className="border border-dashed border-sand rounded-xl p-10 sm:p-12 text-center my-8"><PackageOpen className="w-10 h-10 mx-auto text-charcoal/40 mb-3" /><h2 className="font-display text-lg font-bold mb-1">Aucun article trouvé</h2><p className="text-xs sm:text-sm text-charcoal/70 mb-4">Essayez une autre recherche ou réinitialisez vos filtres.</p><button type="button" onClick={clearFilters} className="min-h-11 px-4 rounded-lg bg-accent text-charcoal font-semibold text-xs sm:text-sm">Afficher tous les articles</button></div>}
       </main>
