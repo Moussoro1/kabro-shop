@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Check, ShoppingBag } from "lucide-react";
+import { Check, ShoppingBag } from "lucide-react";
 import type { Product } from "@/types";
 
 export interface ProductCardProps {
@@ -39,9 +39,7 @@ export function ProductCard({
       id={`product-card-${product.id}`}
       className={`group relative bg-paper border border-sand/80 rounded-xl overflow-hidden shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col justify-between ${className ?? ""}`}
     >
-      {/* Zone visuelle */}
       <div className="relative">
-        {/* Badge de stock moderne */}
         <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
           <span
             className={`inline-flex items-center gap-1 font-mono text-[10px] sm:text-xs font-semibold px-2 py-0.5 border rounded-full backdrop-blur-xs shadow-xs ${stockBadgeClass}`}
@@ -59,7 +57,6 @@ export function ProductCard({
           </span>
         </div>
 
-        {/* Image Produit */}
         <Link
           href={`/products/${product.id}`}
           id={`product-card-link-img-${product.id}`}
@@ -79,7 +76,6 @@ export function ProductCard({
         </Link>
       </div>
 
-      {/* Bloc Informations & Prix */}
       <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3">
         <div className="space-y-1.5">
           <Link
@@ -92,7 +88,6 @@ export function ProductCard({
             </h3>
           </Link>
 
-          {/* Prix clairement affiché en FCFA */}
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className="font-mono text-primary font-black text-sm sm:text-base md:text-lg tracking-tight">
               {product.price.toLocaleString("fr-FR")}
@@ -103,7 +98,6 @@ export function ProductCard({
           </div>
         </div>
 
-        {/* Action tactile d'au moins 44px */}
         <div className="pt-1">
           {isOutOfStock ? (
             <button
