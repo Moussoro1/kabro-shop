@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Check } from "lucide-react";
+import { Check, ShoppingBag } from "lucide-react";
 import type { Product } from "@/types";
 
 export interface ProductCardProps {
@@ -21,83 +21,90 @@ export function ProductCard({
   const isLowStock = product.stock > 0 && product.stock <= 3;
 
   const stockBadgeText = isOutOfStock
-    ? "ÉPUISÉ"
+    ? "Épuisé"
     : isLowStock
-    ? "DERNIÈRES PIÈCES"
-    : "EN STOCK";
+    ? `Dernières pièces (${product.stock})`
+    : "En stock";
 
-  const stockBadgeColor = isOutOfStock
-    ? "text-danger border-danger/60 bg-paper"
+  const stockBadgeClass = isOutOfStock
+    ? "bg-danger/10 text-danger border-danger/20"
     : isLowStock
-    ? "text-accent border-accent/80 bg-paper"
-    : "text-success border-success/60 bg-paper";
+    ? "bg-accent/20 text-charcoal border-accent/40"
+    : "bg-emerald-500/10 text-emerald-800 border-emerald-500/20";
 
   const mainImage = product.images[0] || "https://picsum.photos/seed/placeholder/600/600";
 
   return (
     <article
       id={`product-card-${product.id}`}
-      className={`group relative bg-paper border border-sand rounded [border-radius:4px] overflow-hidden flex flex-col transition-all duration-150 hover:border-primary/40 ${className ?? ""}`}
+      className={`group relative bg-paper border border-sand/80 rounded-xl overflow-hidden shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-200 flex flex-col justify-between ${className ?? ""}`}
     >
-      {/* Coin perforé façon ticket détaché */}
-      <div
-        className="absolute -top-3 left-4 w-6 h-6 rounded-full bg-paper border-b border-sand z-10 pointer-events-none"
-        aria-hidden="true"
-      />
+      <div className="relative">
+        <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+          <span
+            className={`inline-flex items-center gap-1 font-mono text-[10px] sm:text-xs font-semibold px-2 py-0.5 border rounded-full backdrop-blur-xs shadow-xs ${stockBadgeClass}`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isOutOfStock
+                  ? "bg-danger"
+                  : isLowStock
+                  ? "bg-amber-600 animate-pulse"
+                  : "bg-emerald-600"
+              }`}
+            />
+            {stockBadgeText}
+          </span>
+        </div>
 
-      {/* Badge stock façon tampon */}
-      <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
-        <span
-          className={`inline-block font-mono text-[10px] sm:text-xs font-semibold px-2 py-0.5 border rounded [border-radius:2px] uppercase tracking-wider transform -rotate-2 ${stockBadgeColor}`}
+        <Link
+          href={`/products/${product.id}`}
+          id={`product-card-link-img-${product.id}`}
+          className="relative aspect-square w-full bg-sand/15 overflow-hidden block"
+          aria-label={`Voir la fiche détaillée de ${product.name}`}
         >
-          {stockBadgeText}
-        </span>
+          <Image
+            src={mainImage}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
+              isOutOfStock ? "grayscale opacity-75" : ""
+            }`}
+            referrerPolicy="no-referrer"
+          />
+        </Link>
       </div>
 
-      {/* Image Produit */}
-      <Link
-        href={`/products/${product.id}`}
-        id={`product-card-link-img-${product.id}`}
-        className="relative aspect-square w-full bg-sand/20 overflow-hidden block"
-      >
-        <Image
-          src={mainImage}
-          alt={product.name}
-          fill
-          sizes="(max-width: 768px) 50vw, 25vw"
-          className={`object-cover transition-transform duration-200 group-hover:scale-[1.02] ${isOutOfStock ? "grayscale opacity-75" : ""}`}
-          referrerPolicy="no-referrer"
-        />
-      </Link>
-
-      {/* Bordure pointillée séparant l'image du bloc infos */}
-      <div className="border-t border-dashed border-sand w-full" />
-
-      {/* Bloc Infos Ticket */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
-        <div>
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between gap-3">
+        <div className="space-y-1.5">
           <Link
             href={`/products/${product.id}`}
             id={`product-card-link-title-${product.id}`}
-            className="block"
+            className="block group-hover:text-primary transition-colors"
           >
-            <h3 className="font-display font-semibold text-charcoal text-sm sm:text-base line-clamp-2 hover:text-primary transition-colors leading-snug">
+            <h3 className="font-display font-bold text-charcoal text-xs sm:text-sm md:text-base line-clamp-2 leading-snug min-h-[2rem] sm:min-h-[2.5rem]">
               {product.name}
             </h3>
           </Link>
-          <p className="font-mono text-primary font-bold text-sm sm:text-base mt-1.5">
-            {product.price.toLocaleString("fr-FR")} FCFA
-          </p>
+
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="font-mono text-primary font-black text-sm sm:text-base md:text-lg tracking-tight">
+              {product.price.toLocaleString("fr-FR")}
+            </span>
+            <span className="text-[11px] sm:text-xs font-bold text-primary/80 uppercase">
+              FCFA
+            </span>
+          </div>
         </div>
 
-        {/* Action rapide */}
-        <div className="mt-3 pt-2">
+        <div className="pt-1">
           {isOutOfStock ? (
             <button
               type="button"
               disabled
               id={`product-card-btn-disabled-${product.id}`}
-              className="w-full py-2 px-2 bg-sand/30 text-charcoal/50 font-medium text-xs rounded [border-radius:2px] cursor-not-allowed uppercase font-mono text-center"
+              className="w-full h-11 min-h-[44px] px-3 bg-sand/40 text-charcoal/50 font-semibold text-xs sm:text-sm rounded-lg cursor-not-allowed uppercase font-mono text-center flex items-center justify-center border border-sand"
             >
               Épuisé
             </button>
@@ -110,17 +117,26 @@ export function ProductCard({
                   onAddToCart(product);
                 }
               }}
-              className="w-full py-2 px-3 bg-accent text-charcoal font-semibold text-xs sm:text-sm rounded [border-radius:2px] inline-flex items-center justify-center gap-1.5 hover:brightness-95 active:scale-[0.98] transition-all cursor-pointer"
+              className={`w-full h-11 min-h-[44px] px-3 font-bold text-xs sm:text-sm rounded-lg inline-flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.98] ${
+                isAdded
+                  ? "bg-success text-paper hover:bg-success/90"
+                  : "bg-accent text-charcoal hover:bg-accent/90"
+              }`}
+              aria-label={
+                isAdded
+                  ? `${product.name} ajouté au panier`
+                  : `Ajouter ${product.name} au panier`
+              }
             >
               {isAdded ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
                   <span>Ajouté !</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Ajouter</span>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Ajouter au panier</span>
                 </>
               )}
             </button>
