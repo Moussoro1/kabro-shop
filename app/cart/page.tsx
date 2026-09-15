@@ -1,15 +1,18 @@
 "use client";
 
-import { type ReactElement, useState, useEffect } from "react";
-import Image from "next/image";
+import { type ReactElement, useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShoppingBag, Truck, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useCart } from "@/context/CartContext";
+import { CartItemRow } from "@/components/cart/CartItemRow";
+import { CartSummaryCard } from "@/components/cart/CartSummaryCard";
+import { CartEmptyState } from "@/components/cart/CartEmptyState";
 
 export default function CartPage(): ReactElement {
   const { items, updateQuantity, removeItem, total, clearCart } = useCart();
   const [mounted, setMounted] = useState<boolean>(false);
+  const [announcement, setAnnouncement] = useState<string>("");
 
   useEffect((): (() => void) => {
     const timer = setTimeout((): void => {
@@ -20,25 +23,75 @@ export default function CartPage(): ReactElement {
     };
   }, []);
 
+  // Total d'articles cumulés (ex: 2 robes + 1 beurre = 3 articles)
+  const totalItemsCount = useMemo((): number => {
+    return items.reduce((sum, item) => sum + item.quantity, 0);
+  }, [items]);
+
+  const handleUpdateQuantity = useCallback(
+    (productId: string, newQuantity: number): void => {
+      const targetItem = items.find((i) => i.productId === productId);
+      const itemName = targetItem ? targetItem.name : "Article";
+      updateQuantity(productId, newQuantity);
+      setAnnouncement(`Quantité de ${itemName} mise à jour : ${newQuantity}`);
+    },
+    [items, updateQuantity]
+  );
+
+  const handleRemoveItem = useCallback(
+    (productId: string): void => {
+      const targetItem = items.find((i) => i.productId === productId);
+      const itemName = targetItem ? targetItem.name : "Article";
+      removeItem(productId);
+      setAnnouncement(`${itemName} a été retiré de votre panier`);
+    },
+    [items, removeItem]
+  );
+
+  const handleClearCart = useCallback((): void => {
+    if (window.confirm("Êtes-vous sûr de vouloir vider l'ensemble de votre panier ?")) {
+      clearCart();
+      setAnnouncement("Votre panier a été entièrement vidé");
+    }
+  }, [clearCart]);
+
   const hasItems = mounted && items.length > 0;
 
   return (
-    <div id="cart-page-container" className="min-h-screen bg-paper text-charcoal flex flex-col">
+    <div
+      id="cart-page-container"
+      className="min-h-screen bg-paper text-charcoal flex flex-col overflow-x-hidden"
+    >
       <Header />
 
-      <main id="cart-main" className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 md:py-10">
-        {/* En-tête Panier */}
-        <div className="mb-6 flex items-center justify-between border-b border-sand pb-4">
+      {/* Zone accessible d'annonces dynamiques pour lecteurs d'écran (A11y) */}
+      <div
+        id="cart-live-region"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+
+      <main
+        id="cart-main-content"
+        className="flex-1 max-w-5xl w-full mx-auto px-3.5 sm:px-6 py-5 sm:py-8 md:py-10"
+      >
+        {/* Barre supérieure de navigation contextuelle */}
+        <div className="mb-6 flex items-center justify-between border-b border-sand pb-4 gap-2 flex-wrap">
           <div>
             <Link
               href="/products"
-              id="cart-continue-shopping"
-              className="inline-flex items-center gap-1.5 text-xs text-charcoal/70 hover:text-primary transition-colors mb-1"
+              id="cart-back-to-shop-link"
+              aria-label="Retourner aux produits de la boutique"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-charcoal/70 hover:text-primary transition-colors mb-1.5 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Continuer mes achats</span>
             </Link>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-charcoal tracking-tight">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
               Mon Panier
             </h1>
           </div>
@@ -46,209 +99,81 @@ export default function CartPage(): ReactElement {
           {hasItems && (
             <button
               type="button"
-              id="clear-cart-button"
-              onClick={clearCart}
-              className="text-xs font-mono text-danger hover:underline cursor-pointer"
+              id="cart-clear-all-button"
+              onClick={handleClearCart}
+              aria-label="Vider entièrement le panier"
+              className="inline-flex items-center gap-1 text-xs font-mono font-medium text-danger/80 hover:text-danger hover:underline p-2 rounded transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-danger"
             >
-              Vider le panier
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Vider le panier</span>
             </button>
           )}
         </div>
 
+        {/* État de chargement initial / hydratation */}
         {!mounted ? (
-          <div id="cart-loading-state" className="flex items-center justify-center py-20 text-charcoal/60">
+          <div
+            id="cart-loading-indicator"
+            className="flex items-center justify-center py-24 text-charcoal/60"
+            role="status"
+            aria-live="polite"
+          >
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <span className="text-xs font-mono">Chargement du panier...</span>
+              <Loader2 className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />
+              <span className="text-xs font-mono">Chargement de votre panier...</span>
             </div>
           </div>
         ) : hasItems ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Liste façon Ticket de Marché */}
-            <div className="lg:col-span-7 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* Colonne Gauche : Liste des articles */}
+            <section
+              id="cart-items-section"
+              className="lg:col-span-7 space-y-4"
+              aria-label="Liste des articles dans le panier"
+            >
               <div
-                id="cart-ticket-container"
-                className="relative bg-paper border border-sand rounded [border-radius:4px] p-4 sm:p-6 overflow-hidden"
+                id="cart-items-container"
+                className="relative bg-paper border border-sand rounded-lg p-4 sm:p-6 shadow-sm"
               >
-                {/* Coin perforé ticket */}
-                <div
-                  className="absolute -top-3 left-6 w-6 h-6 rounded-full bg-paper border-b border-sand z-10 pointer-events-none"
-                  aria-hidden="true"
-                />
-
-                <div className="border-b border-dashed border-sand pb-3 mb-4 flex justify-between items-center">
-                  <span className="font-mono text-xs uppercase tracking-wider text-charcoal/70">
-                    Articles du ticket
+                {/* En-tête de la liste des articles */}
+                <div className="border-b border-sand pb-3.5 mb-2 flex justify-between items-center text-xs">
+                  <span className="font-mono uppercase tracking-wider text-charcoal/70 font-semibold">
+                    Articles ({totalItemsCount})
                   </span>
-                  <span className="font-mono text-xs font-bold text-primary">
+                  <span className="font-mono font-bold text-primary">
                     {items.length} {items.length > 1 ? "références" : "référence"}
                   </span>
                 </div>
 
-                {/* Items */}
-                <div className="divide-y divide-dashed divide-sand/80">
+                {/* Liste des lignes d'articles */}
+                <div className="divide-y divide-sand/80">
                   {items.map((item) => (
-                    <div
+                    <CartItemRow
                       key={item.productId}
-                      id={`cart-item-${item.productId}`}
-                      className="py-4 flex gap-3 sm:gap-4 items-center"
-                    >
-                      {/* Image miniature */}
-                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-sand/20 border border-sand rounded [border-radius:2px] overflow-hidden">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-
-                      {/* Détails & Quantité */}
-                      <div className="flex-1 min-w-0">
-                        <h2 className="font-display font-semibold text-charcoal text-sm sm:text-base truncate">
-                          {item.name}
-                        </h2>
-                        <p className="font-mono text-xs sm:text-sm text-primary font-bold mt-0.5">
-                          {item.price.toLocaleString("fr-FR")} FCFA
-                        </p>
-
-                        <div className="flex items-center gap-3 mt-2.5">
-                          {/* Contrôle Quantité */}
-                          <div className="inline-flex items-center border border-sand bg-paper rounded [border-radius:2px]">
-                            <button
-                              type="button"
-                              id={`cart-minus-btn-${item.productId}`}
-                              onClick={(): void => updateQuantity(item.productId, item.quantity - 1)}
-                              aria-label="Diminuer la quantité"
-                              className="p-1 text-charcoal hover:bg-sand/30 transition-colors cursor-pointer"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-8 text-center font-mono text-xs sm:text-sm font-bold text-charcoal select-none">
-                              {item.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              id={`cart-plus-btn-${item.productId}`}
-                              onClick={(): void => updateQuantity(item.productId, item.quantity + 1)}
-                              aria-label="Augmenter la quantité"
-                              className="p-1 text-charcoal hover:bg-sand/30 transition-colors cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          {/* Bouton supprimer */}
-                          <button
-                            type="button"
-                            id={`cart-remove-btn-${item.productId}`}
-                            onClick={(): void => removeItem(item.productId)}
-                            aria-label={`Supprimer ${item.name}`}
-                            className="text-charcoal/50 hover:text-danger p-1 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Sous-total item */}
-                      <div className="text-right shrink-0">
-                        <span className="font-mono text-sm sm:text-base font-bold text-charcoal block">
-                          {(item.price * item.quantity).toLocaleString("fr-FR")}
-                        </span>
-                        <span className="font-mono text-[10px] text-charcoal/60 uppercase">FCFA</span>
-                      </div>
-                    </div>
+                      item={item}
+                      onUpdateQuantity={handleUpdateQuantity}
+                      onRemoveItem={handleRemoveItem}
+                    />
                   ))}
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Récapitulatif Total & CTA Commander */}
-            <div className="lg:col-span-5">
-              <div
-                id="cart-summary-card"
-                className="bg-paper border border-sand rounded [border-radius:4px] p-5 sm:p-6 sticky top-20"
-              >
-                <h2 className="font-display font-bold text-lg text-charcoal mb-4">
-                  Récapitulatif de la commande
-                </h2>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/80">Sous-total articles</span>
-                    <span className="font-mono font-medium text-charcoal">{total.toLocaleString("fr-FR")} FCFA</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/80">Mode de règlement</span>
-                    <span className="font-mono font-medium text-primary">Paiement à la livraison (COD)</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/80">Frais d&apos;expédition</span>
-                    <span className="font-mono font-medium text-success">Calculés à l&apos;adresse</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-b border-dashed border-sand py-4 mb-6 flex justify-between items-baseline">
-                  <div>
-                    <span className="font-display font-bold text-base text-charcoal block">
-                      Total estimé
-                    </span>
-                    <span className="text-xs text-charcoal/60">À régler à la réception</span>
-                  </div>
-                  <span className="font-mono text-2xl font-bold text-primary">
-                    {total.toLocaleString("fr-FR")} FCFA
-                  </span>
-                </div>
-
-                {/* CTA Commander */}
-                <Link
-                  href="/checkout"
-                  id="cart-checkout-cta"
-                  className="w-full py-3.5 px-4 bg-accent text-charcoal font-bold text-base rounded [border-radius:2px] inline-flex items-center justify-center gap-2 hover:brightness-95 active:scale-[0.99] transition-all shadow-sm cursor-pointer"
-                >
-                  <span>Commander</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-
-                {/* Réassurance */}
-                <div className="mt-6 pt-4 border-t border-sand space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-charcoal/80">
-                    <Truck className="w-4 h-4 text-primary shrink-0" />
-                    <span>Livraison à domicile ou au bureau</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-charcoal/80">
-                    <ShieldCheck className="w-4 h-4 text-success shrink-0" />
-                    <span>Pas de paiement par carte exigé à l&apos;avance</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Colonne Droite : Récapitulatif & CTA */}
+            <aside
+              id="cart-summary-aside"
+              className="lg:col-span-5"
+              aria-label="Récapitulatif financier et validation"
+            >
+              <CartSummaryCard
+                totalAmount={total}
+                totalItems={totalItemsCount}
+              />
+            </aside>
           </div>
         ) : (
           /* État Panier Vide */
-          <div
-            id="cart-empty-state"
-            className="border border-dashed border-sand rounded [border-radius:4px] p-12 text-center my-8 bg-paper max-w-xl mx-auto"
-          >
-            <ShoppingBag className="w-12 h-12 mx-auto text-charcoal/40 mb-3" />
-            <h2 className="font-display text-xl font-bold text-charcoal mb-2">
-              Votre panier est vide
-            </h2>
-            <p className="text-sm text-charcoal/70 mb-6 max-w-md mx-auto">
-              Découvrez nos articles artisanaux, cosmétiques et mode wax disponibles immédiatement.
-            </p>
-            <Link
-              href="/products"
-              id="cart-empty-cta"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-accent text-charcoal font-semibold text-sm rounded [border-radius:2px] hover:brightness-95 transition-all cursor-pointer"
-            >
-              <span>Parcourir la boutique</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+          <CartEmptyState />
         )}
       </main>
     </div>
