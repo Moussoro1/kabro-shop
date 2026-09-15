@@ -1,0 +1,6 @@
+{
+  "name": "Boutique Marché",
+  "description": "Boutique en ligne avec paiement à la livraison (COD) et confirmation WhatsApp",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
