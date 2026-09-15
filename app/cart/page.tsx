@@ -32,7 +32,6 @@ export default function CartPage(): ReactElement {
     (productId: string, newQuantity: number): void => {
       const targetItem = items.find((i) => i.productId === productId);
       const itemName = targetItem ? targetItem.name : "Article";
-
       updateQuantity(productId, newQuantity);
       setAnnouncement(`Quantité de ${itemName} mise à jour : ${newQuantity}`);
     },
@@ -43,7 +42,6 @@ export default function CartPage(): ReactElement {
     (productId: string): void => {
       const targetItem = items.find((i) => i.productId === productId);
       const itemName = targetItem ? targetItem.name : "Article";
-
       removeItem(productId);
       setAnnouncement(`${itemName} a été retiré de votre panier`);
     },
@@ -93,7 +91,7 @@ export default function CartPage(): ReactElement {
               <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Continuer mes achats</span>
             </Link>
-            <h1 className="font-display text-2xl sm:text-3xl font-black text-charcoal tracking-tight">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
               Mon Panier
             </h1>
           </div>
@@ -127,18 +125,18 @@ export default function CartPage(): ReactElement {
           </div>
         ) : hasItems ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Colonne Gauche : Ticket des articles */}
+            {/* Colonne Gauche : Liste des articles */}
             <section
               id="cart-items-section"
               className="lg:col-span-7 space-y-4"
               aria-label="Liste des articles dans le panier"
             >
               <div
-                id="cart-market-ticket"
-                className="relative bg-paper border border-sand rounded [border-radius:4px] p-4 sm:p-6 shadow-2xs"
+                id="cart-items-container"
+                className="relative bg-paper border border-sand rounded-lg p-4 sm:p-6 shadow-sm"
               >
-                {/* En-tête style Ticket de Marché */}
-                <div className="border-b border-dashed border-sand pb-3.5 mb-2 flex justify-between items-center text-xs">
+                {/* En-tête de la liste des articles */}
+                <div className="border-b border-sand pb-3.5 mb-2 flex justify-between items-center text-xs">
                   <span className="font-mono uppercase tracking-wider text-charcoal/70 font-semibold">
                     Articles ({totalItemsCount})
                   </span>
@@ -148,7 +146,7 @@ export default function CartPage(): ReactElement {
                 </div>
 
                 {/* Liste des lignes d'articles */}
-                <div className="divide-y divide-dashed divide-sand/80">
+                <div className="divide-y divide-sand/80">
                   {items.map((item) => (
                     <CartItemRow
                       key={item.productId}

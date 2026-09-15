@@ -19,7 +19,6 @@ export function CartItemRow({
   onRemoveItem,
 }: CartItemRowProps): ReactElement {
   const [imageError, setImageError] = useState<boolean>(false);
-
   const isMinQuantity = item.quantity <= 1;
   const itemTotal = item.price * item.quantity;
   const imageSource = imageError || !item.image ? FALLBACK_IMAGE : item.image;
@@ -41,12 +40,12 @@ export function CartItemRow({
   return (
     <article
       id={`cart-item-row-${item.productId}`}
-      className="py-4 sm:py-5 border-b border-dashed border-sand/80 last:border-b-0"
+      className="py-4 sm:py-5 border-b border-sand/80 last:border-b-0"
       aria-labelledby={`cart-item-title-${item.productId}`}
     >
       <div className="flex flex-col xs:flex-row gap-3 sm:gap-4">
         {/* Vignette Produit avec ratio stable */}
-        <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 bg-sand/20 border border-sand/70 rounded [border-radius:4px] overflow-hidden self-start">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 bg-sand/20 border border-sand/70 rounded-md overflow-hidden self-start">
           <Image
             src={imageSource}
             alt={item.name}
@@ -96,7 +95,7 @@ export function CartItemRow({
             <div className="flex items-center gap-1.5">
               <span className="sr-only">Quantité pour {item.name}</span>
               <div
-                className="inline-flex items-center border border-sand bg-paper rounded [border-radius:4px] shadow-2xs"
+                className="inline-flex items-center border border-sand bg-paper rounded-md shadow-2xs"
                 role="group"
                 aria-label={`Ajuster la quantité de ${item.name}`}
               >
@@ -111,7 +110,6 @@ export function CartItemRow({
                 >
                   <Minus className="w-4 h-4" aria-hidden="true" />
                 </button>
-
                 <span
                   id={`cart-item-qty-${item.productId}`}
                   className="w-9 sm:w-10 text-center font-mono text-sm sm:text-base font-bold text-charcoal select-none"
@@ -121,7 +119,6 @@ export function CartItemRow({
                 >
                   {item.quantity}
                 </span>
-
                 <button
                   type="button"
                   id={`cart-increment-btn-${item.productId}`}
@@ -139,7 +136,7 @@ export function CartItemRow({
                 id={`cart-remove-btn-${item.productId}`}
                 onClick={handleRemove}
                 aria-label={`Supprimer ${item.name} du panier`}
-                className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-charcoal/50 hover:text-danger active:text-danger/80 hover:bg-danger/10 rounded [border-radius:4px] transition-colors focus-visible:outline-2 focus-visible:outline-danger focus-visible:outline-offset-1 cursor-pointer ml-1"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-charcoal/50 hover:text-danger active:text-danger/80 hover:bg-danger/10 rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-danger focus-visible:outline-offset-1 cursor-pointer ml-1"
                 title={`Supprimer ${item.name}`}
               >
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
